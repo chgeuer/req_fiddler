@@ -29,3 +29,9 @@ Req.new()
 |> Req.merge(method: :get, url: "https://hex.pm/")
 |> Req.request!() 
 ```
+
+### Screenshot from this session
+
+You can see that first it fetches the MITM CA certificate from `http://192.168.1.172:8888/FiddlerRoot.cer` and then tunnels to `hex.pm`, and Fiddler injects itself as man-in-the-middle:
+
+![](content/fiddler_screenshot.png)
