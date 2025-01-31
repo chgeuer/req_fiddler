@@ -10,26 +10,36 @@ defmodule ReqFiddler do
     end
   end
 
+  defp transport_opts(ip_address, port) do
+    Req.get!(url: "http://#{ip_address}:#{port}/FiddlerRoot.cer")
+    |> case do
+      %Req.Response{status: 200, body: proxy_cert} ->
+        [
+          # https://hexdocs.pm/mint/Mint.HTTP.html#connect/4-transport-options
+          ## openssl x509 -inform der -in FiddlerRoot.cer -out FiddlerRoot.pem
+          # cacertfile: Path.join([System.user_home!(), "FiddlerRoot.pem"])
+          # verify: :verify_none
+          verify: :verify_peer,
+          cacerts: [proxy_cert]
+        ]
+
+      _ ->
+        [
+          verify: :verify_none
+        ]
+    end
+  end
+
   @doc """
   Attaches the proxy server address and port to the request.
   """
   def attach(%Req.Request{} = req, ip_address, port) do
-    %Req.Response{status: 200, body: proxy_cert} =
-      Req.get!(url: "http://#{ip_address}:#{port}/FiddlerRoot.cer")
-
     req
     |> Req.merge(
       connect_options: [
         # proxy_headers: [ {"proxy-authorization", "Basic " <> Base.encode64("user:pass")} ],
         proxy: {:http, ip_address, port, []},
-        transport_opts: [
-          # https://hexdocs.pm/mint/Mint.HTTP.html#connect/4-transport-options
-          # verify: :verify_none
-          verify: :verify_peer,
-          cacerts: [proxy_cert]
-          ## openssl x509 -inform der -in FiddlerRoot.cer -out FiddlerRoot.pem
-          # cacertfile: Path.join([System.user_home!(), "FiddlerRoot.pem"])
-        ]
+        transport_opts: transport_opts(ip_address, port)
       ]
     )
   end
