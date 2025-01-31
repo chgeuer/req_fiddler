@@ -9,6 +9,8 @@ In the simplest case, you must call `ReqFiddler.attach()` on a `%Req.Request{}` 
 - Fetch the Fiddler CA certificate by calling the Windows host's Fiddler port and get the certificate from ` "http://#{ip_address}:#{port}/FiddlerRoot.cer"`
 - Configure the proxy on the `Req.Request`.
 
+Oh, and if there's no proxy configured, that handler is just skipped.
+
 ## Installation
 
 The package can be installed by adding `req_fiddler` to your list of dependencies in `mix.exs`:
@@ -35,3 +37,4 @@ Req.new()
 You can see that first it fetches the MITM CA certificate from `http://192.168.1.172:8888/FiddlerRoot.cer` and then tunnels to `hex.pm`, and Fiddler injects itself as man-in-the-middle:
 
 ![](content/fiddler_screenshot.png)
+

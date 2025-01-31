@@ -3,14 +3,12 @@
 ```elixir
 Mix.install([
   {:req, "~> 0.5.8"},
-  {:req_fiddler, github: "chgeuer/req_fiddler"}
+  # {:req_fiddler, github: "chgeuer/req_fiddler"}
+  {:req_fiddler, path: "/mnt/c/github/chgeuer/req_fiddler"}
 ])
 ```
 
-## Demo
-
-![](./fiddler_screenshot.png)
-
+## Section
 
 ```elixir
 Req.new()
@@ -18,3 +16,28 @@ Req.new()
 |> Req.merge(method: :get, url: "https://hex.pm/")
 |> Req.request!() 
 ```
+
+```elixir
+defmodule UrlParser do
+  def extract_host_port(url) when is_binary(url) do
+    Regex.run(~r{(https?://|https?=)([^:]+):(\d+)}, url)
+    |> case do
+      [_, _protocol, host, port] -> {host, String.to_integer(port)}
+      nil -> nil
+    end
+  end
+end
+```
+
+```elixir
+"\r\nHKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\r\n    ProxyServer    REG_SZ    http=localhost:4000\r\n\r\n"
+|> String.trim()
+|> String.split("\r\n")
+|> Enum.at(-1)
+|> (&Regex.run(~r/^\s*ProxyServer\s+REG_SZ\s+(.*)/, &1)).()
+|> Enum.at(-1)
+|> UrlParser.extract_host_port()
+|> dbg()
+```
+
+![](./fiddler_screenshot.png)

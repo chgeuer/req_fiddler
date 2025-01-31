@@ -5,8 +5,8 @@ defmodule ReqFiddler do
 
   def attach(%Req.Request{} = req) do
     case proxy_settings() do
+      {:ok, addr, port} -> req |> attach(addr, port)
       nil -> req
-      {:ok, addr, port} -> attach(req, addr, port)
     end
   end
 
@@ -47,6 +47,8 @@ defmodule ReqFiddler do
   @doc """
   Fetches the proxy server address and port from the Windows registry.
 
+  > `reg.exe query HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings /v ProxyServer`
+
   Returns `{:ok, port}` if the proxy server is set.
   Returns `nil` if the proxy server is not set.
   """
@@ -63,8 +65,7 @@ defmodule ReqFiddler do
     )
     |> case do
       {output, 0} ->
-        {port, ""} = extract_port(output)
-        {:ok, port}
+        extract_port(output)
 
       {_, 1} ->
         nil
@@ -108,6 +109,14 @@ defmodule ReqFiddler do
     end
   end
 
+  defp extract_host_port(url) when is_binary(url) do
+    Regex.run(~r{(https?://|https?=)([^:]+):(\d+)}, url)
+    |> case do
+      [_, _protocol, host, port] -> {host, String.to_integer(port)}
+      nil -> nil
+    end
+  end
+
   # @doc"""
   # Extracts the port number from the output of the `reg.exe` command.
   # """
@@ -116,9 +125,13 @@ defmodule ReqFiddler do
     |> String.trim()
     |> String.split("\r\n")
     |> Enum.at(-1)
-    |> (&Regex.run(~r/^\s*ProxyServer\s+REG_SZ\s+http=127.0.0.1:(.*);/, &1)).()
+    |> (&Regex.run(~r/^\s*ProxyServer\s+REG_SZ\s+(.*)/, &1)).()
     |> Enum.at(-1)
-    |> Integer.parse()
+    |> extract_host_port()
+    |> case do
+      {_host, port} -> {:ok, port}
+      nil -> nil
+    end
   end
 
   @doc """
@@ -140,19 +153,18 @@ defmodule ReqFiddler do
   Returns `nil` if the proxy server is not set.
   """
   def proxy_settings do
-    case fetch_proxy_server() do
-      {:ok, port} ->
-        addr =
-          get_address()
-          |> List.flatten()
-          |> Enum.uniq()
-          |> Enum.filter(&String.contains?(&1, "192.168"))
-          |> hd
+    with {:ok, true} <- fetch_proxy_enabled(),
+         {:ok, port} <- fetch_proxy_server() do
+      addr =
+        get_address()
+        |> List.flatten()
+        |> Enum.uniq()
+        |> Enum.filter(&String.contains?(&1, "192.168"))
+        |> hd
 
-        {:ok, addr, port}
-
-      nil ->
-        nil
+      {:ok, addr, port}
+    else
+      _ -> nil
     end
   end
 end
