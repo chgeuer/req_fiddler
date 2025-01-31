@@ -1,0 +1,20 @@
+# Demoing ReqFiddler
+
+```elixir
+Mix.install([
+  {:req, "~> 0.5.8"},
+  {:req_fiddler, github: "chgeuer/req_fiddler"}
+])
+```
+
+## Demo
+
+![](./fiddler_screenshot.png)
+
+
+```elixir
+Req.new()
+|> ReqFiddler.attach()
+|> Req.merge(method: :get, url: "https://hex.pm/")
+|> Req.request!() 
+```
