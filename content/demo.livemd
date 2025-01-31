@@ -3,9 +3,9 @@
 ```elixir
 Mix.install([
   {:req, "~> 0.5.8"},
-  # {:req_fiddler, github: "chgeuer/req_fiddler"}
-  {:req_fiddler, path: "/mnt/c/github/chgeuer/req_fiddler"}
-])
+  {:req_fiddler, github: "chgeuer/req_fiddler"}
+  # {:req_fiddler, path: "/mnt/c/github/chgeuer/req_fiddler"}
+], force: true)
 ```
 
 ## Section
